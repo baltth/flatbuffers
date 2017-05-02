@@ -191,13 +191,13 @@ template<typename T> T EndianSwap(T t) {
   if (sizeof(T) == 1) {   // Compile-time if-then's.
     return t;
   } else if (sizeof(T) == 2) {
-    auto r = FLATBUFFERS_BYTESWAP16(*reinterpret_cast<uint16_t *>(&t));
+    uint16_t r = FLATBUFFERS_BYTESWAP16(*reinterpret_cast<uint16_t *>(&t));
     return *reinterpret_cast<T *>(&r);
   } else if (sizeof(T) == 4) {
-    auto r = FLATBUFFERS_BYTESWAP32(*reinterpret_cast<uint32_t *>(&t));
+    uint32_t r = FLATBUFFERS_BYTESWAP32(*reinterpret_cast<uint32_t *>(&t));
     return *reinterpret_cast<T *>(&r);
   } else if (sizeof(T) == 8) {
-    auto r = FLATBUFFERS_BYTESWAP64(*reinterpret_cast<uint64_t *>(&t));
+    uint64_t r = FLATBUFFERS_BYTESWAP64(*reinterpret_cast<uint64_t *>(&t));
     return *reinterpret_cast<T *>(&r);
   } else {
     assert(0);
@@ -479,7 +479,7 @@ private:
   template<typename K> static int KeyCompare(const void *ap, const void *bp) {
     const K *key = reinterpret_cast<const K *>(ap);
     const uint8_t *data = reinterpret_cast<const uint8_t *>(bp);
-    auto table = IndirectHelper<T>::Read(data, 0);
+    typename IndirectHelper<T>::return_type table = IndirectHelper<T>::Read(data, 0);
 
     // std::bsearch compares with the operands transposed, so we negate the
     // result here.
@@ -617,26 +617,26 @@ class vector_downward {
   uint8_t *data_at(size_t offset) const { return buf_ + reserved_ - offset; }
 
   void push(const uint8_t *bytes, size_t num) {
-    auto dest = make_space(num);
+    uint8_t* dest = make_space(num);
     memcpy(dest, bytes, num);
   }
 
   // Specialized version of push() that avoids memcpy call for small data.
   template<typename T> void push_small(const T& little_endian_t) {
-    auto dest = make_space(sizeof(T));
+    uint8_t* dest = make_space(sizeof(T));
     *reinterpret_cast<T *>(dest) = little_endian_t;
   }
 
   // fill() is most frequently called with small byte counts (<= 4),
   // which is why we're using loops rather than calling memset.
   void fill(size_t zero_pad_bytes) {
-    auto dest = make_space(zero_pad_bytes);
+    uint8_t* dest = make_space(zero_pad_bytes);
     for (size_t i = 0; i < zero_pad_bytes; i++) dest[i] = 0;
   }
 
   // Version for when we know the size is larger.
   void fill_big(size_t zero_pad_bytes) {
-    auto dest = make_space(zero_pad_bytes);
+    uint8_t* dest = make_space(zero_pad_bytes);
     memset(dest, 0, zero_pad_bytes);
   }
 
@@ -653,13 +653,13 @@ class vector_downward {
   const simple_allocator &allocator_;
 
   void reallocate(size_t len) {
-    auto old_size = size();
-    auto largest_align = AlignOf<largest_scalar_t>();
+    uoffset_t old_size = size();
+    size_t largest_align = AlignOf<largest_scalar_t>();
     reserved_ += (std::max)(len, growth_policy(reserved_));
     // Round up to avoid undefined behavior from unaligned loads and stores.
     reserved_ = (reserved_ + (largest_align - 1)) & ~(largest_align - 1);
-    auto new_buf = allocator_.allocate(reserved_);
-    auto new_cur = new_buf + reserved_ - old_size;
+    uint8_t* new_buf = allocator_.allocate(reserved_);
+    uint8_t* new_cur = new_buf + reserved_ - old_size;
     memcpy(new_cur, cur_, old_size);
     cur_ = new_cur;
     allocator_.deallocate(buf_);
@@ -850,7 +850,7 @@ FLATBUFFERS_FINAL_CLASS
   template<typename T> void AddElement(voffset_t field, T e, T def) {
     // We don't serialize values equal to the default.
     if (e == def && !force_defaults_) return;
-    auto off = PushElement(e);
+    uoffset_t off = PushElement(e);
     TrackField(field, off);
   }
 
@@ -909,34 +909,34 @@ FLATBUFFERS_FINAL_CLASS
     assert(nested);
     // Write the vtable offset, which is the start of any Table.
     // We fill it's value later.
-    auto vtableoffsetloc = PushElement<soffset_t>(0);
+    uoffset_t vtableoffsetloc = PushElement<soffset_t>(0);
     // Write a vtable, which consists entirely of voffset_t elements.
     // It starts with the number of offsets, followed by a type id, followed
     // by the offsets themselves. In reverse:
     buf_.fill_big(numfields * sizeof(voffset_t));
-    auto table_object_size = vtableoffsetloc - start;
+    uoffset_t table_object_size = vtableoffsetloc - start;
     assert(table_object_size < 0x10000);  // Vtable use 16bit offsets.
     PushElement<voffset_t>(static_cast<voffset_t>(table_object_size));
     PushElement<voffset_t>(FieldIndexToOffset(numfields));
     // Write the offsets into the table
-    for (auto field_location = offsetbuf_.begin();
+    for (std::vector<FieldLoc>::iterator field_location = offsetbuf_.begin();
               field_location != offsetbuf_.end();
             ++field_location) {
-      auto pos = static_cast<voffset_t>(vtableoffsetloc - field_location->off);
+      voffset_t pos = static_cast<voffset_t>(vtableoffsetloc - field_location->off);
       // If this asserts, it means you've set a field twice.
       assert(!ReadScalar<voffset_t>(buf_.data() + field_location->id));
       WriteScalar<voffset_t>(buf_.data() + field_location->id, pos);
     }
     offsetbuf_.clear();
-    auto vt1 = reinterpret_cast<voffset_t *>(buf_.data());
-    auto vt1_size = ReadScalar<voffset_t>(vt1);
-    auto vt_use = GetSize();
+    voffset_t* vt1 = reinterpret_cast<voffset_t *>(buf_.data());
+    voffset_t vt1_size = ReadScalar<voffset_t>(vt1);
+    uoffset_t vt_use = GetSize();
     // See if we already have generated a vtable with this exact same
     // layout before. If so, make it point to the old one, remove this one.
     if (dedup_vtables_) {
-      for (auto it = vtables_.begin(); it != vtables_.end(); ++it) {
-        auto vt2 = reinterpret_cast<voffset_t *>(buf_.data_at(*it));
-        auto vt2_size = *vt2;
+      for (std::vector<uoffset_t>::iterator it = vtables_.begin(); it != vtables_.end(); ++it) {
+        voffset_t* vt2 = reinterpret_cast<voffset_t *>(buf_.data_at(*it));
+        voffset_t vt2_size = *vt2;
         if (vt1_size != vt2_size || memcmp(vt2, vt1, vt1_size)) continue;
         vt_use = *it;
         buf_.pop(GetSize() - vtableoffsetloc);
@@ -963,8 +963,8 @@ FLATBUFFERS_FINAL_CLASS
   // This checks a required field has been set in a given table that has
   // just been constructed.
   template<typename T> void Required(Offset<T> table, voffset_t field) {
-    auto table_ptr = buf_.data_at(table.o);
-    auto vtable_ptr = table_ptr - ReadScalar<soffset_t>(table_ptr);
+    uint8_t* table_ptr = buf_.data_at(table.o);
+    uint8_t* vtable_ptr = table_ptr - ReadScalar<soffset_t>(table_ptr);
     bool ok = ReadScalar<voffset_t>(vtable_ptr + field) != 0;
     // If this fails, the caller will show what field needs to be set.
     assert(ok);
@@ -1043,11 +1043,11 @@ FLATBUFFERS_FINAL_CLASS
   Offset<String> CreateSharedString(const char *str, size_t len) {
     if (!string_pool)
       string_pool = new StringOffsetMap(StringOffsetCompare(buf_));
-    auto size_before_string = buf_.size();
+    uoffset_t size_before_string = buf_.size();
     // Must first serialize the string, since the set is all offsets into
     // buffer.
-    auto off = CreateString(str, len);
-    auto it = string_pool->find(off);
+    Offset<String> off = CreateString(str, len);
+    StringOffsetMap::iterator it = string_pool->find(off);
     // If it exists we reuse existing serialized data!
     if (it != string_pool->end()) {
       // We can remove the string we serialized.
@@ -1126,7 +1126,7 @@ FLATBUFFERS_FINAL_CLASS
     if (sizeof(T) == 1) {
       PushBytes(reinterpret_cast<const uint8_t *>(v), len);
     } else {
-      for (auto i = len; i > 0; ) {
+      for (size_t i = len; i > 0; ) {
         PushElement(v[--i]);
       }
     }
@@ -1148,7 +1148,7 @@ FLATBUFFERS_FINAL_CLASS
   // Background: https://isocpp.org/blog/2012/11/on-vectorbool
   Offset<Vector<uint8_t>> CreateVector(const std::vector<bool> &v) {
     StartVector(v.size(), sizeof(uint8_t));
-    for (auto i = v.size(); i > 0; ) {
+    for (std::vector<bool>::size_type i = v.size(); i > 0; ) {
       PushElement(static_cast<uint8_t>(v[--i]));
     }
     return Offset<Vector<uint8_t>>(EndVector(v.size()));
@@ -1334,8 +1334,8 @@ FLATBUFFERS_FINAL_CLASS
   struct TableKeyComparator {
   TableKeyComparator(vector_downward& buf) : buf_(buf) {}
     bool operator()(const Offset<T> &a, const Offset<T> &b) const {
-      auto table_a = reinterpret_cast<T *>(buf_.data_at(a.o));
-      auto table_b = reinterpret_cast<T *>(buf_.data_at(b.o));
+      T* table_a = reinterpret_cast<T *>(buf_.data_at(a.o));
+      T* table_b = reinterpret_cast<T *>(buf_.data_at(b.o));
       return table_a->KeyCompareLessThan(table_b);
     }
     vector_downward& buf_;
@@ -1383,8 +1383,8 @@ FLATBUFFERS_FINAL_CLASS
     NotNested();
     StartVector(len, elemsize);
     buf_.make_space(len * elemsize);
-    auto vec_start = GetSize();
-    auto vec_end = EndVector(len);
+    uoffset_t vec_start = GetSize();
+    uoffset_t vec_end = EndVector(len);
     *buf = buf_.data_at(vec_start);
     return vec_end;
   }
@@ -1487,8 +1487,8 @@ FLATBUFFERS_FINAL_CLASS
   struct StringOffsetCompare {
     StringOffsetCompare(const vector_downward &buf) : buf_(&buf) {}
     bool operator() (const Offset<String> &a, const Offset<String> &b) const {
-      auto stra = reinterpret_cast<const String *>(buf_->data_at(a.o));
-      auto strb = reinterpret_cast<const String *>(buf_->data_at(b.o));
+      const String* stra = reinterpret_cast<const String *>(buf_->data_at(a.o));
+      const String* strb = reinterpret_cast<const String *>(buf_->data_at(b.o));
       return strncmp(stra->c_str(), strb->c_str(),
                      std::min(stra->size(), strb->size()) + 1) < 0;
     }
@@ -1564,7 +1564,7 @@ class Verifier FLATBUFFERS_FINAL_CLASS {
   // Verify any range within the buffer.
   bool Verify(const void *elem, size_t elem_len) const {
     #ifdef FLATBUFFERS_TRACK_VERIFIER_BUFFER_SIZE
-      auto upper_bound = reinterpret_cast<const uint8_t *>(elem) + elem_len;
+      const uint8_t* upper_bound = reinterpret_cast<const uint8_t *>(elem) + elem_len;
       if (upper_bound_ < upper_bound)
         upper_bound_ =  upper_bound;
     #endif
@@ -1612,11 +1612,11 @@ class Verifier FLATBUFFERS_FINAL_CLASS {
     if (!Verify<uoffset_t>(vec)) return false;
     // Check the whole array. If this is a string, the byte past the array
     // must be 0.
-    auto size = ReadScalar<uoffset_t>(vec);
-    auto max_elems = FLATBUFFERS_MAX_BUFFER_SIZE / elem_size;
+    uoffset_t size = ReadScalar<uoffset_t>(vec);
+    size_t max_elems = FLATBUFFERS_MAX_BUFFER_SIZE / elem_size;
     if (!Check(size < max_elems))
       return false;  // Protect against byte_size overflowing.
-    auto byte_size = sizeof(size) + elem_size * size;
+    size_t byte_size = sizeof(size) + elem_size * size;
     *end = vec + byte_size;
     return Verify(vec, byte_size);
   }
@@ -1650,7 +1650,7 @@ class Verifier FLATBUFFERS_FINAL_CLASS {
     }
 
     // Call T::Verify, which must be in the generated code for this type.
-    auto o = VerifyOffset(start);
+    uoffset_t o = VerifyOffset(start);
     return o &&
       reinterpret_cast<const T *>(start + o)->
         Verify(*this)
@@ -1677,7 +1677,7 @@ class Verifier FLATBUFFERS_FINAL_CLASS {
 
   uoffset_t VerifyOffset(const uint8_t *start) const {
     if (!Verify<uoffset_t>(start)) return false;
-    auto o = ReadScalar<uoffset_t>(start);
+    uoffset_t o = ReadScalar<uoffset_t>(start);
     Check(o != 0);
     return o;
   }
@@ -1776,22 +1776,22 @@ class Table {
   // if the field was not present.
   voffset_t GetOptionalFieldOffset(voffset_t field) const {
     // The vtable offset is always at the start.
-    auto vtable = GetVTable();
+    const uint8_t* vtable = GetVTable();
     // The first element is the size of the vtable (fields + type id + itself).
-    auto vtsize = ReadScalar<voffset_t>(vtable);
+    voffset_t vtsize = ReadScalar<voffset_t>(vtable);
     // If the field we're accessing is outside the vtable, we're reading older
     // data, so it's the same as if the offset was 0 (not present).
     return field < vtsize ? ReadScalar<voffset_t>(vtable + field) : 0;
   }
 
   template<typename T> T GetField(voffset_t field, T defaultval) const {
-    auto field_offset = GetOptionalFieldOffset(field);
+    voffset_t field_offset = GetOptionalFieldOffset(field);
     return field_offset ? ReadScalar<T>(data_ + field_offset) : defaultval;
   }
 
   template<typename P> P GetPointer(voffset_t field) {
-    auto field_offset = GetOptionalFieldOffset(field);
-    auto p = data_ + field_offset;
+    voffset_t field_offset = GetOptionalFieldOffset(field);
+    uint8_t* p = data_ + field_offset;
     return field_offset
       ? reinterpret_cast<P>(p + ReadScalar<uoffset_t>(p))
       : nullptr;
@@ -1801,20 +1801,20 @@ class Table {
   }
 
   template<typename P> P GetStruct(voffset_t field) const {
-    auto field_offset = GetOptionalFieldOffset(field);
-    auto p = const_cast<uint8_t *>(data_ + field_offset);
+    voffset_t field_offset = GetOptionalFieldOffset(field);
+    uint8_t* p = const_cast<uint8_t *>(data_ + field_offset);
     return field_offset ? reinterpret_cast<P>(p) : nullptr;
   }
 
   template<typename T> bool SetField(voffset_t field, T val, T def) {
-    auto field_offset = GetOptionalFieldOffset(field);
+    voffset_t field_offset = GetOptionalFieldOffset(field);
     if (!field_offset) return val == def;
     WriteScalar(data_ + field_offset, val);
     return true;
   }
 
   bool SetPointer(voffset_t field, const uint8_t *val) {
-    auto field_offset = GetOptionalFieldOffset(field);
+    voffset_t field_offset = GetOptionalFieldOffset(field);
     if (!field_offset) return false;
     WriteScalar(data_ + field_offset,
                 static_cast<uoffset_t>(val - (data_ + field_offset)));
@@ -1822,7 +1822,7 @@ class Table {
   }
 
   uint8_t *GetAddressOf(voffset_t field) {
-    auto field_offset = GetOptionalFieldOffset(field);
+    voffset_t field_offset = GetOptionalFieldOffset(field);
     return field_offset ? data_ + field_offset : nullptr;
   }
   const uint8_t *GetAddressOf(voffset_t field) const {
@@ -1838,7 +1838,7 @@ class Table {
   bool VerifyTableStart(Verifier &verifier) const {
     // Check the vtable offset.
     if (!verifier.Verify<soffset_t>(data_)) return false;
-    auto vtable = GetVTable();
+    const uint8_t* vtable = GetVTable();
     // Check the vtable size field, then check vtable fits in its entirety.
     return verifier.VerifyComplexity() &&
            verifier.Verify<voffset_t>(vtable) &&
@@ -1851,7 +1851,7 @@ class Table {
                                         voffset_t field) const {
     // Calling GetOptionalFieldOffset should be safe now thanks to
     // VerifyTable().
-    auto field_offset = GetOptionalFieldOffset(field);
+    voffset_t field_offset = GetOptionalFieldOffset(field);
     // Check the actual field.
     return !field_offset || verifier.Verify<T>(data_ + field_offset);
   }
@@ -1859,19 +1859,19 @@ class Table {
   // VerifyField for required fields.
   template<typename T> bool VerifyFieldRequired(const Verifier &verifier,
                                                 voffset_t field) const {
-    auto field_offset = GetOptionalFieldOffset(field);
+    voffset_t field_offset = GetOptionalFieldOffset(field);
     return verifier.Check(field_offset != 0) &&
            verifier.Verify<T>(data_ + field_offset);
   }
 
   // Versions for offsets.
   bool VerifyOffset(const Verifier &verifier, voffset_t field) const {
-    auto field_offset = GetOptionalFieldOffset(field);
+    voffset_t field_offset = GetOptionalFieldOffset(field);
     return !field_offset || verifier.VerifyOffset(data_ + field_offset);
   }
 
   bool VerifyOffsetRequired(const Verifier &verifier, voffset_t field) const {
-    auto field_offset = GetOptionalFieldOffset(field);
+    voffset_t field_offset = GetOptionalFieldOffset(field);
     return verifier.Check(field_offset != 0) &&
            verifier.VerifyOffset(data_ + field_offset);
   }
@@ -1890,10 +1890,10 @@ class Table {
 /// This may be useful if you want to pass on a root and have the recipient
 /// delete the buffer afterwards.
 inline const uint8_t *GetBufferStartFromRootPointer(const void *root) {
-  auto table = reinterpret_cast<const Table *>(root);
-  auto vtable = table->GetVTable();
+  const Table* table = reinterpret_cast<const Table *>(root);
+  const uint8_t* vtable = table->GetVTable();
   // Either the vtable is before the root or after the root.
-  auto start = std::min(vtable, reinterpret_cast<const uint8_t *>(root));
+  const uint8_t* start = std::min(vtable, reinterpret_cast<const uint8_t *>(root));
   // Align to at least sizeof(uoffset_t).
   start = reinterpret_cast<const uint8_t *>(
             reinterpret_cast<uintptr_t>(start) & ~(sizeof(uoffset_t) - 1));
@@ -1908,7 +1908,7 @@ inline const uint8_t *GetBufferStartFromRootPointer(const void *root) {
   // be 0 or four ASCII characters.
   static_assert(FlatBufferBuilder::kFileIdentifierLength == sizeof(uoffset_t),
                 "file_identifier is assumed to be the same size as uoffset_t");
-  for (auto possible_roots = FLATBUFFERS_MAX_ALIGNMENT / sizeof(uoffset_t) + 1;
+  for (size_t possible_roots = FLATBUFFERS_MAX_ALIGNMENT / sizeof(uoffset_t) + 1;
        possible_roots;
        possible_roots--) {
       start -= sizeof(uoffset_t);
