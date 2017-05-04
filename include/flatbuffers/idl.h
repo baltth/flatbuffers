@@ -657,6 +657,14 @@ extern bool GenerateCPP(const Parser &parser,
                         const std::string &path,
                         const std::string &file_name);
 
+// Generate a C++03 header from the definitions in the Parser object.
+// See idl_gen_cpp03.
+extern std::string GenerateCPP03(const Parser &parser,
+                               const std::string &include_guard_ident);
+extern bool GenerateCPP03(const Parser &parser,
+                        const std::string &path,
+                        const std::string &file_name);
+
 // Generate JavaScript or TypeScript code from the definitions in the Parser object.
 // See idl_gen_js.
 extern std::string GenerateJS(const Parser &parser);
