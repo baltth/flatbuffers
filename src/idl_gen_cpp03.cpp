@@ -496,7 +496,7 @@ class Cpp03Generator : public BaseGenerator {
   static std::string UnionVectorVerifySignature(const EnumDef &enum_def) {
     return "bool Verify" + enum_def.name + "Vector" +
            "(flatbuffers::Verifier &verifier, " +
-           "const flatbuffers::Vector<flatbuffers::Offset<void>> *values, " +
+           "const flatbuffers::Vector<flatbuffers::Offset<void> > *values, " +
            "const flatbuffers::Vector<uint8_t> *types)";
   }
 
@@ -1742,6 +1742,60 @@ class Cpp03Generator : public BaseGenerator {
     return code;
   }
 
+  std::string GenItemCreatorName(const FieldDef& field) {
+    return "ItemCreator_" + field.name;
+  }
+
+  void GenCreateParamNestedType(const FieldDef &field) {
+    switch (field.value.type.base_type) {
+      case BASE_TYPE_VECTOR: {
+        auto vector_type = field.value.type.VectorType();
+        switch (vector_type.base_type) {
+          case BASE_TYPE_STRUCT: {
+            if (!IsStruct(vector_type)) {
+              code_ += "struct " + GenItemCreatorName(field) + " : flatbuffers::VectorItemCreator {";
+              code_ += "  flatbuffers::FlatBufferBuilder &_fbb;";
+              code_ += "  const flatbuffers::rehasher_function_t *_rehasher;";
+              code_ += "  " + GenItemCreatorName(field) + "\\";
+              code_ += "(flatbuffers::FlatBufferBuilder &f, \\";
+              code_ += "const flatbuffers::rehasher_function_t *r) :";
+              code_ += "    _fbb(f),";
+              code_ += "    _rehasher(r) {};";
+              code_ += "  virtual TODO operator()(size_t i) {";
+              code_ += "    return Create" + vector_type.struct_def->name + "\\";
+              code_ += "(_fbb, " + value + "[i]" + GenPtrGet(field) + ", \\";
+              code_ += "_rehasher);";
+              code_ += "  }";
+              code_ += "};";
+              code_ += "c_" + GenItemCreatorName(field) + "(_fbb, _rehasher);";
+            }
+            break;
+          }
+/*          case BASE_TYPE_UNION: {
+            code += "_fbb.CreateVector<flatbuffers::Offset<void> >(" + value +
+                    ".size(), [&](size_t i) { return " + value +
+                    "[i].Pack(_fbb, _rehasher); })";
+            break;
+          }
+          case BASE_TYPE_UTYPE: {
+            value = StripUnionType(value);
+            code += "_fbb.CreateVector<uint8_t>(" + value +
+                    ".size(), [&](size_t i) { return static_cast<uint8_t>(" + value +
+                    "[i].type); })";
+            break;
+          } */
+          default: {
+            break;
+          }
+        }
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+  }
+
   std::string GenCreateParam(const FieldDef &field) {
     std::string value = "_o->";
     if (field.value.type.base_type == BASE_TYPE_UTYPE) {
@@ -1797,12 +1851,10 @@ class Cpp03Generator : public BaseGenerator {
               }
               code += "(" + value + ")";
             } else {
+              code += 
               code += "_fbb.CreateVector<flatbuffers::Offset<";
-              code += WrapInNameSpace(*vector_type.struct_def) + ">>";
-              code += "(" + value + ".size(), [&](size_t i) {";
-              code += " return Create" + vector_type.struct_def->name;
-              code += "(_fbb, " + value + "[i]" + GenPtrGet(field) + ", ";
-              code += "_rehasher); })";
+              code += WrapInNameSpace(*vector_type.struct_def) + "> >";
+              code += "(" + value + ".size(), c_" + GenItemCreatorName(field) + ");";
             }
             break;
           }
@@ -1811,7 +1863,7 @@ class Cpp03Generator : public BaseGenerator {
             break;
           }
           case BASE_TYPE_UNION: {
-            code += "_fbb.CreateVector<flatbuffers::Offset<void>>(" + value +
+            code += "_fbb.CreateVector<flatbuffers::Offset<void> >(" + value +
                     ".size(), [&](size_t i) { return " + value +
                     "[i].Pack(_fbb, _rehasher); })";
             break;
