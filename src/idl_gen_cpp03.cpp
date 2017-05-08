@@ -1750,40 +1750,67 @@ class Cpp03Generator : public BaseGenerator {
     switch (field.value.type.base_type) {
       case BASE_TYPE_VECTOR: {
         auto vector_type = field.value.type.VectorType();
+        auto element_type = GenTypeBasic(vector_type, true);
+        std::string vector = "std::vector<" + element_type + ">";
         switch (vector_type.base_type) {
           case BASE_TYPE_STRUCT: {
             if (!IsStruct(vector_type)) {
-              code_ += "struct " + GenItemCreatorName(field) + " : flatbuffers::VectorItemCreator {";
-              code_ += "  flatbuffers::FlatBufferBuilder &_fbb;";
-              code_ += "  const flatbuffers::rehasher_function_t *_rehasher;";
-              code_ += "  " + GenItemCreatorName(field) + "\\";
+              code_ += "  struct " + GenItemCreatorName(field) + " : flatbuffers::VectorItemCreator<\\";
+              code_ += element_type + " > {";
+              code_ += "    flatbuffers::FlatBufferBuilder &_fbb;";
+              code_ += "    const flatbuffers::rehasher_function_t *_rehasher;";
+              code_ += "    " + vector + "& _v;";
+              code_ += "    " + GenItemCreatorName(field) + "\\";
               code_ += "(flatbuffers::FlatBufferBuilder &f, \\";
-              code_ += "const flatbuffers::rehasher_function_t *r) :";
-              code_ += "    _fbb(f),";
-              code_ += "    _rehasher(r) {};";
-              code_ += "  virtual TODO operator()(size_t i) {";
-              code_ += "    return Create" + vector_type.struct_def->name + "\\";
-              code_ += "(_fbb, " + value + "[i]" + GenPtrGet(field) + ", \\";
+              code_ += "const flatbuffers::rehasher_function_t *r, \\";
+              code_ += vector + "& v) :";
+              code_ += "      _fbb(f),";
+              code_ += "      _rehasher(r),";
+              code_ += "      _v(v) {};";
+              code_ += "    virtual " + element_type + " operator()(size_t i) {";
+              code_ += "      return Create" + vector_type.struct_def->name + "\\";
+              code_ += "(_fbb, _v[i]" + GenPtrGet(field) + ", \\";
               code_ += "_rehasher);";
-              code_ += "  }";
-              code_ += "};";
-              code_ += "c_" + GenItemCreatorName(field) + "(_fbb, _rehasher);";
+              code_ += "    }";
+              code_ += "  };";
+              code_ += "  " + GenItemCreatorName(field) + " c_" + GenItemCreatorName(field) + "(_fbb, _rehasher, _o->" + field.name + ");";
             }
             break;
           }
-/*          case BASE_TYPE_UNION: {
-            code += "_fbb.CreateVector<flatbuffers::Offset<void> >(" + value +
-                    ".size(), [&](size_t i) { return " + value +
-                    "[i].Pack(_fbb, _rehasher); })";
+          case BASE_TYPE_UNION: {
+            code_ += "  struct " + GenItemCreatorName(field) + " : flatbuffers::VectorItemCreator<\\";
+            code_ += element_type + " > {";
+            code_ += "    flatbuffers::FlatBufferBuilder &_fbb;";
+            code_ += "    const flatbuffers::rehasher_function_t *_rehasher;";
+            code_ += "    " + vector + "& _v;";
+            code_ += "    " + GenItemCreatorName(field) + "\\";
+            code_ += "(flatbuffers::FlatBufferBuilder &f, \\";
+            code_ += "const flatbuffers::rehasher_function_t *r, \\";
+            code_ += vector + "& v) :";
+            code_ += "      _fbb(f),";
+            code_ += "      _rehasher(r),";
+            code_ += "      _v(v) {};";
+            code_ += "    virtual " + element_type + " operator()(size_t i) {";
+            code_ += "      return _v[i].Pack(_fbb, _rehasher);";
+            code_ += "    }";
+            code_ += "  };";
+            code_ += "  " + GenItemCreatorName(field) + " c_" + GenItemCreatorName(field) + "(_fbb, _rehasher, _o->" + field.name + ");";
             break;
           }
           case BASE_TYPE_UTYPE: {
-            value = StripUnionType(value);
-            code += "_fbb.CreateVector<uint8_t>(" + value +
-                    ".size(), [&](size_t i) { return static_cast<uint8_t>(" + value +
-                    "[i].type); })";
+            code_ += "  struct " + GenItemCreatorName(field) + " : flatbuffers::VectorItemCreator<\\";
+            code_ += element_type + " > {";
+            code_ += "    " + vector + "& _v;";
+            code_ += "    " + GenItemCreatorName(field) + "\\";
+            code_ += "  (" + vector + "& v) :";
+            code_ += "      _v(v) {};";
+            code_ += "    virtual " + element_type + " operator()(size_t i) {";
+            code_ += "      return static_cast<uint8_t>(_v[i].type);";
+            code_ += "    }";
+            code_ += "  };";
+            code_ += "  " + GenItemCreatorName(field) + " c_" + GenItemCreatorName(field) + "(_fbb, _rehasher, _o->" + field.name + ");";
             break;
-          } */
+          } 
           default: {
             break;
           }
@@ -1863,16 +1890,14 @@ class Cpp03Generator : public BaseGenerator {
             break;
           }
           case BASE_TYPE_UNION: {
-            code += "_fbb.CreateVector<flatbuffers::Offset<void> >(" + value +
-                    ".size(), [&](size_t i) { return " + value +
-                    "[i].Pack(_fbb, _rehasher); })";
+            code += "_fbb.CreateVector<flatbuffers::Offset<void> >";
+            code += "(" + value + ".size(), c_" + GenItemCreatorName(field) + ");";
             break;
           }
           case BASE_TYPE_UTYPE: {
             value = StripUnionType(value);
-            code += "_fbb.CreateVector<uint8_t>(" + value +
-                    ".size(), [&](size_t i) { return static_cast<uint8_t>(" + value +
-                    "[i].type); })";
+            code += "_fbb.CreateVector<uint8_t>(" + value;
+            code += ".size(), c_" + GenItemCreatorName(field) + ");";
             break;
           }
           default: {
@@ -1983,7 +2008,16 @@ class Cpp03Generator : public BaseGenerator {
       code_ += "inline " + TableCreateSignature(struct_def, false) + " {";
       code_ += "  (void)_rehasher;";
       code_ += "  (void)_o;";
-
+      
+      for (auto it = struct_def.fields.vec.begin();
+           it != struct_def.fields.vec.end(); ++it) {
+        auto &field = **it;
+        if (field.deprecated) {
+          continue;
+        }
+        GenCreateParamNestedType(field);  
+      }
+      
       for (auto it = struct_def.fields.vec.begin();
            it != struct_def.fields.vec.end(); ++it) {
         auto &field = **it;

@@ -94,7 +94,7 @@ struct CharacterUnion {
 };
 
 bool VerifyCharacter(flatbuffers::Verifier &verifier, const void *obj, Character type);
-bool VerifyCharacterVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types);
+bool VerifyCharacterVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void> > *values, const flatbuffers::Vector<uint8_t> *types);
 
 MANUALLY_ALIGNED_STRUCT(4) Rapunzel FLATBUFFERS_FINAL_CLASS {
  private:
@@ -379,10 +379,32 @@ inline flatbuffers::Offset<Movie> Movie::Pack(flatbuffers::FlatBufferBuilder &_f
 inline flatbuffers::Offset<Movie> CreateMovie(flatbuffers::FlatBufferBuilder &_fbb, const MovieT *_o, const flatbuffers::rehasher_function_t *_rehasher) {
   (void)_rehasher;
   (void)_o;
+  struct ItemCreator_characters_type : flatbuffers::VectorItemCreator {
+    std::vector<uint8_t>& _v;
+    ItemCreator_characters_type  (std::vector<uint8_t>& v) :
+      _v(v) {};
+    virtual uint8_t operator()(size_t i) {
+      return static_cast<uint8_t>(_v[i].type);
+    }
+  };
+  c_ItemCreator_characters_type(_fbb, _rehasher, _o->characters_type);
+  struct ItemCreator_characters : flatbuffers::VectorItemCreator {
+    flatbuffers::FlatBufferBuilder &_fbb;
+    const flatbuffers::rehasher_function_t *_rehasher;
+    std::vector<Offset<void>>& _v;
+    ItemCreator_characters(flatbuffers::FlatBufferBuilder &f, const flatbuffers::rehasher_function_t *r, std::vector<Offset<void>>& v) :
+      _fbb(f),
+      _rehasher(r),
+      _v(v) {};
+    virtual Offset<void> operator()(size_t i) {
+      return _v[i].Pack(_fbb, _rehasher);
+    }
+  };
+  c_ItemCreator_characters(_fbb, _rehasher, _o->characters);
   Character _main_character_type = _o->main_character.type;
   flatbuffers::Offset<void> _main_character = _o->main_character.Pack(_fbb);
-  flatbuffers::Offset<flatbuffers::Vector<uint8_t>> _characters_type = _o->characters.size() ? _fbb.CreateVector<uint8_t>(_o->characters.size(), [&](size_t i) { return static_cast<uint8_t>(_o->characters[i].type); }) : 0;
-  flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<void>>> _characters = _o->characters.size() ? _fbb.CreateVector<flatbuffers::Offset<void>>(_o->characters.size(), [&](size_t i) { return _o->characters[i].Pack(_fbb, _rehasher); }) : 0;
+  flatbuffers::Offset<flatbuffers::Vector<uint8_t>> _characters_type = _o->characters.size() ? _fbb.CreateVector<uint8_t>(_o->characters.size(), c_ItemCreator_characters_type); : 0;
+  flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<void>>> _characters = _o->characters.size() ? _fbb.CreateVector<flatbuffers::Offset<void> >(_o->characters.size(), c_ItemCreator_characters); : 0;
   return CreateMovie(
       _fbb,
       _main_character_type,
@@ -421,7 +443,7 @@ inline bool VerifyCharacter(flatbuffers::Verifier &verifier, const void *obj, Ch
   }
 }
 
-inline bool VerifyCharacterVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types) {
+inline bool VerifyCharacterVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void> > *values, const flatbuffers::Vector<uint8_t> *types) {
   if (values->size() != types->size()) return false;
   for (flatbuffers::uoffset_t i = 0; i < values->size(); ++i) {
     if (!VerifyCharacter(
