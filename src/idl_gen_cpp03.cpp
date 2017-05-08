@@ -213,7 +213,7 @@ class Cpp03Generator : public BaseGenerator {
       if (parser_.file_identifier_.length()) {
         code_.SetValue("ID", name + "Identifier()");
       } else {
-        code_.SetValue("ID", "nullptr");
+        code_.SetValue("ID", "NULLPTR");
       }
 
       code_ += "inline bool Verify{{STRUCT_NAME}}Buffer(";
@@ -252,7 +252,7 @@ class Cpp03Generator : public BaseGenerator {
 
         code_ += "inline {{UNPACK_RETURN}} UnPack{{STRUCT_NAME}}(";
         code_ += "    const void *buf,";
-        code_ += "    const flatbuffers::resolver_function_t *res = nullptr) {";
+        code_ += "    const flatbuffers::resolver_function_t *res = NULLPTR) {";
         code_ += "  return {{UNPACK_TYPE}}\\";
         code_ += "(Get{{STRUCT_NAME}}(buf)->UnPack(res));";
         code_ += "}";
@@ -320,7 +320,7 @@ class Cpp03Generator : public BaseGenerator {
         return "flatbuffers::String";
       }
       case BASE_TYPE_VECTOR: {
-        const auto type_name = GenTypeWire(type.VectorType(), "", false);
+        const auto type_name = GenTypeWire(type.VectorType(), " ", false);
         return "flatbuffers::Vector<" + type_name + ">";
       }
       case BASE_TYPE_STRUCT: {
@@ -514,7 +514,7 @@ class Cpp03Generator : public BaseGenerator {
            (inclass ? "" : enum_def.name + "Union::") +
            "Pack(flatbuffers::FlatBufferBuilder &_fbb, " +
            "const flatbuffers::rehasher_function_t *_rehasher" +
-           (inclass ? " = nullptr" : "") + ") const";
+           (inclass ? " = NULLPTR" : "") + ") const";
   }
 
   static std::string TableCreateSignature(const StructDef &struct_def,
@@ -524,7 +524,7 @@ class Cpp03Generator : public BaseGenerator {
            "(flatbuffers::FlatBufferBuilder &_fbb, const " +
            NativeName(struct_def.name, &struct_def) +
            " *_o, const flatbuffers::rehasher_function_t *_rehasher" +
-           (predecl ? " = nullptr" : "") + ")";
+           (predecl ? " = NULLPTR" : "") + ")";
   }
 
   static std::string TablePackSignature(const StructDef &struct_def,
@@ -535,7 +535,7 @@ class Cpp03Generator : public BaseGenerator {
            "Pack(flatbuffers::FlatBufferBuilder &_fbb, " +
            "const " + NativeName(struct_def.name, &struct_def) + "* _o, " +
            "const flatbuffers::rehasher_function_t *_rehasher" +
-           (inclass ? " = nullptr" : "") + ")";
+           (inclass ? " = NULLPTR" : "") + ")";
   }
 
   static std::string TableUnPackSignature(const StructDef &struct_def,
@@ -543,7 +543,7 @@ class Cpp03Generator : public BaseGenerator {
     return NativeName(struct_def.name, &struct_def) + " *" +
            (inclass ? "" : struct_def.name + "::") +
            "UnPack(const flatbuffers::resolver_function_t *_resolver" +
-           (inclass ? " = nullptr" : "") + ") const";
+           (inclass ? " = NULLPTR" : "") + ") const";
   }
 
   static std::string TableUnPackToSignature(const StructDef &struct_def,
@@ -551,7 +551,7 @@ class Cpp03Generator : public BaseGenerator {
     return "void " + (inclass ? "" : struct_def.name + "::") +
            "UnPackTo(" + NativeName(struct_def.name, &struct_def) + " *" +
            "_o, const flatbuffers::resolver_function_t *_resolver" +
-           (inclass ? " = nullptr" : "") + ") const";
+           (inclass ? " = NULLPTR" : "") + ") const";
   }
 
   // Generate an enum declaration and an enum string lookup table.
@@ -636,7 +636,7 @@ class Cpp03Generator : public BaseGenerator {
         }
         code_ += "    \"" + ev.name + "\",";
       }
-      code_ += "    nullptr";
+      code_ += "    NULLPTR";
       code_ += "  };";
 
       code_ += "  return names;";
@@ -688,9 +688,9 @@ class Cpp03Generator : public BaseGenerator {
       code_ += "  {{NAME}} type;";
       code_ += "  void *value;";
       code_ += "";
-      code_ += "  {{NAME}}Union() : type({{NONE}}), value(nullptr) {}";
+      code_ += "  {{NAME}}Union() : type({{NONE}}), value(NULLPTR) {}";
       code_ += "  {{NAME}}Union({{NAME}}Union&& u) FLATBUFFERS_NOEXCEPT :";
-      code_ += "    type({{NONE}}), value(nullptr)";
+      code_ += "    type({{NONE}}), value(NULLPTR)";
       code_ += "    { std::swap(type, u.type); std::swap(value, u.value); }";
       code_ += "  {{NAME}}Union(const {{NAME}}Union &) FLATBUFFERS_NOEXCEPT;";
       code_ += "  {{NAME}}Union &operator=(const {{NAME}}Union &u) FLATBUFFERS_NOEXCEPT";
@@ -732,7 +732,7 @@ class Cpp03Generator : public BaseGenerator {
 
         code_ += "  {{NATIVE_TYPE}} *As{{NATIVE_NAME}}() {";
         code_ += "    return type == {{NATIVE_ID}} ?";
-        code_ += "      reinterpret_cast<{{NATIVE_TYPE}} *>(value) : nullptr;";
+        code_ += "      reinterpret_cast<{{NATIVE_TYPE}} *>(value) : NULLPTR;";
         code_ += "  }";
       }
       code_ += "};";
@@ -832,7 +832,7 @@ class Cpp03Generator : public BaseGenerator {
         }
         code_ += "    }";
       }
-      code_ += "    default: return nullptr;";
+      code_ += "    default: return NULLPTR;";
       code_ += "  }";
       code_ += "}";
       code_ += "";
@@ -874,7 +874,7 @@ class Cpp03Generator : public BaseGenerator {
       // Union copy constructor
       code_ += "inline {{ENUM_NAME}}Union::{{ENUM_NAME}}Union(const "
                "{{ENUM_NAME}}Union &u) FLATBUFFERS_NOEXCEPT : type(u.type), "
-               "value(nullptr) {";
+               "value(NULLPTR) {";
       code_ += "  switch (type) {";
       for (auto it = enum_def.vals.vec.begin(); it != enum_def.vals.vec.end();
            ++it) {
@@ -937,7 +937,7 @@ class Cpp03Generator : public BaseGenerator {
       }
       code_ += "    default: break;";
       code_ += "  }";
-      code_ += "  value = nullptr;";
+      code_ += "  value = NULLPTR;";
       code_ += "  type = {{NONE}};";
       code_ += "}";
       code_ += "";
@@ -1037,9 +1037,9 @@ class Cpp03Generator : public BaseGenerator {
   std::string GenParamValue(const FieldDef &field, bool direct) {
     std::string code;
     if (direct && field.value.type.base_type == BASE_TYPE_STRING) {
-      code = "nullptr";
+      code = "NULLPTR";
     } else if (direct && field.value.type.base_type == BASE_TYPE_VECTOR) {
-      code = "nullptr";
+      code = "NULLPTR";
     } else {
       code = GetDefaultScalarValue(field);
     }
@@ -1303,7 +1303,7 @@ class Cpp03Generator : public BaseGenerator {
           code_ += "  {{U_FIELD_TYPE}}{{U_FIELD_NAME}}() const {";
           code_ += "    return {{U_GET_TYPE}}() == {{U_ELEMENT_TYPE}} ? "
                   "static_cast<{{U_FIELD_TYPE}}>({{FIELD_NAME}}()) "
-                  ": nullptr;";
+                  ": NULLPTR;";
           code_ += "  }";
         }
       }
@@ -1733,7 +1733,7 @@ class Cpp03Generator : public BaseGenerator {
           code += "(reinterpret_cast<void **>(&_o->" + field.name + "), ";
           code += "static_cast<flatbuffers::hash_value_t>(_e));";
           code += " else ";
-          code += "_o->" + field.name + " = nullptr;";
+          code += "_o->" + field.name + " = NULLPTR;";
         } else {
           // Generate code for assigning the value, of the form:
           //  _o->field = value;
@@ -1772,7 +1772,7 @@ class Cpp03Generator : public BaseGenerator {
               code_ += "      _fbb(f),";
               code_ += "      _rehasher(r),";
               code_ += "      _v(v) {};";
-              code_ += "    virtual " + element_type + " operator()(size_t i) {";
+              code_ += "    virtual " + element_type + " operator()(size_t i) const {";
               code_ += "      return Create" + vector_type.struct_def->name + "\\";
               code_ += "(_fbb, _v[i]" + GenPtrGet(field) + ", \\";
               code_ += "_rehasher);";
@@ -1797,7 +1797,7 @@ class Cpp03Generator : public BaseGenerator {
             code_ += "      _fbb(f),";
             code_ += "      _rehasher(r),";
             code_ += "      _v(v) {};";
-            code_ += "    virtual " + element_type + " operator()(size_t i) {";
+            code_ += "    virtual " + element_type + " operator()(size_t i) const {";
             code_ += "      return _v[i].Pack(_fbb, _rehasher);";
             code_ += "    }";
             code_ += "  };";
@@ -1812,7 +1812,7 @@ class Cpp03Generator : public BaseGenerator {
             code_ += "    " + GenItemCreatorName(field) + "\\";
             code_ += "(const " + vector + "& v) :";
             code_ += "      _v(v) {};";
-            code_ += "    virtual " + element_type + " operator()(size_t i) {";
+            code_ += "    virtual " + element_type + " operator()(size_t i) const {";
             code_ += "      return static_cast<uint8_t>(_v[i].type);";
             code_ += "    }";
             code_ += "  };";

@@ -400,7 +400,7 @@ struct IDLOptions {
       generate_name_strings(false),
       escape_proto_identifiers(false),
       generate_object_based_api(false),
-      cpp_object_api_pointer_type("std::unique_ptr"),
+      cpp_object_api_pointer_type("std::auto_ptr"),
       union_value_namespacing(true),
       allow_non_utf8(false),
       binary_schema_comments(false),

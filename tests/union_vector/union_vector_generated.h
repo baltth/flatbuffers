@@ -37,7 +37,7 @@ inline const char **EnumNamesCharacter() {
     "BookFan",
     "Other",
     "Unused",
-    nullptr
+    NULLPTR
   };
   return names;
 }
@@ -51,9 +51,9 @@ struct CharacterUnion {
   Character type;
   void *value;
 
-  CharacterUnion() : type(Character_NONE), value(nullptr) {}
+  CharacterUnion() : type(Character_NONE), value(NULLPTR) {}
   CharacterUnion(CharacterUnion&& u) FLATBUFFERS_NOEXCEPT :
-    type(Character_NONE), value(nullptr)
+    type(Character_NONE), value(NULLPTR)
     { std::swap(type, u.type); std::swap(value, u.value); }
   CharacterUnion(const CharacterUnion &) FLATBUFFERS_NOEXCEPT;
   CharacterUnion &operator=(const CharacterUnion &u) FLATBUFFERS_NOEXCEPT
@@ -65,31 +65,31 @@ struct CharacterUnion {
   void Reset();
 
   static void *UnPack(const void *obj, Character type, const flatbuffers::resolver_function_t *resolver);
-  flatbuffers::Offset<void> Pack(flatbuffers::FlatBufferBuilder &_fbb, const flatbuffers::rehasher_function_t *_rehasher = nullptr) const;
+  flatbuffers::Offset<void> Pack(flatbuffers::FlatBufferBuilder &_fbb, const flatbuffers::rehasher_function_t *_rehasher = NULLPTR) const;
 
   AttackerT *AsMuLan() {
     return type == Character_MuLan ?
-      reinterpret_cast<AttackerT *>(value) : nullptr;
+      reinterpret_cast<AttackerT *>(value) : NULLPTR;
   }
   Rapunzel *AsRapunzel() {
     return type == Character_Rapunzel ?
-      reinterpret_cast<Rapunzel *>(value) : nullptr;
+      reinterpret_cast<Rapunzel *>(value) : NULLPTR;
   }
   BookReader *AsBelle() {
     return type == Character_Belle ?
-      reinterpret_cast<BookReader *>(value) : nullptr;
+      reinterpret_cast<BookReader *>(value) : NULLPTR;
   }
   BookReader *AsBookFan() {
     return type == Character_BookFan ?
-      reinterpret_cast<BookReader *>(value) : nullptr;
+      reinterpret_cast<BookReader *>(value) : NULLPTR;
   }
   std::string *AsOther() {
     return type == Character_Other ?
-      reinterpret_cast<std::string *>(value) : nullptr;
+      reinterpret_cast<std::string *>(value) : NULLPTR;
   }
   std::string *AsUnused() {
     return type == Character_Unused ?
-      reinterpret_cast<std::string *>(value) : nullptr;
+      reinterpret_cast<std::string *>(value) : NULLPTR;
   }
 };
 
@@ -166,9 +166,9 @@ struct Attacker FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyField<int32_t>(verifier, VT_SWORD_ATTACK_DAMAGE) &&
            verifier.EndTable();
   }
-  AttackerT *UnPack(const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  void UnPackTo(AttackerT *_o, const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  static flatbuffers::Offset<Attacker> Pack(flatbuffers::FlatBufferBuilder &_fbb, const AttackerT* _o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
+  AttackerT *UnPack(const flatbuffers::resolver_function_t *_resolver = NULLPTR) const;
+  void UnPackTo(AttackerT *_o, const flatbuffers::resolver_function_t *_resolver = NULLPTR) const;
+  static flatbuffers::Offset<Attacker> Pack(flatbuffers::FlatBufferBuilder &_fbb, const AttackerT* _o, const flatbuffers::rehasher_function_t *_rehasher = NULLPTR);
 };
 
 struct AttackerBuilder {
@@ -197,7 +197,7 @@ inline flatbuffers::Offset<Attacker> CreateAttacker(
   return builder_.Finish();
 }
 
-flatbuffers::Offset<Attacker> CreateAttacker(flatbuffers::FlatBufferBuilder &_fbb, const AttackerT *_o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
+flatbuffers::Offset<Attacker> CreateAttacker(flatbuffers::FlatBufferBuilder &_fbb, const AttackerT *_o, const flatbuffers::rehasher_function_t *_rehasher = NULLPTR);
 
 struct MovieT : public flatbuffers::NativeTable {
   typedef Movie TableType;
@@ -226,37 +226,37 @@ struct Movie FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   template<typename T> const T *main_character_as() const;
   const Attacker *main_character_as_MuLan() const {
-    return main_character_type() == Character_MuLan ? static_cast<const Attacker *>(main_character()) : nullptr;
+    return main_character_type() == Character_MuLan ? static_cast<const Attacker *>(main_character()) : NULLPTR;
   }
   const Rapunzel *main_character_as_Rapunzel() const {
-    return main_character_type() == Character_Rapunzel ? static_cast<const Rapunzel *>(main_character()) : nullptr;
+    return main_character_type() == Character_Rapunzel ? static_cast<const Rapunzel *>(main_character()) : NULLPTR;
   }
   const BookReader *main_character_as_Belle() const {
-    return main_character_type() == Character_Belle ? static_cast<const BookReader *>(main_character()) : nullptr;
+    return main_character_type() == Character_Belle ? static_cast<const BookReader *>(main_character()) : NULLPTR;
   }
   const BookReader *main_character_as_BookFan() const {
-    return main_character_type() == Character_BookFan ? static_cast<const BookReader *>(main_character()) : nullptr;
+    return main_character_type() == Character_BookFan ? static_cast<const BookReader *>(main_character()) : NULLPTR;
   }
   const flatbuffers::String *main_character_as_Other() const {
-    return main_character_type() == Character_Other ? static_cast<const flatbuffers::String *>(main_character()) : nullptr;
+    return main_character_type() == Character_Other ? static_cast<const flatbuffers::String *>(main_character()) : NULLPTR;
   }
   const flatbuffers::String *main_character_as_Unused() const {
-    return main_character_type() == Character_Unused ? static_cast<const flatbuffers::String *>(main_character()) : nullptr;
+    return main_character_type() == Character_Unused ? static_cast<const flatbuffers::String *>(main_character()) : NULLPTR;
   }
   void *mutable_main_character() {
     return GetPointer<void *>(VT_MAIN_CHARACTER);
   }
-  const flatbuffers::Vector<uint8_t> *characters_type() const {
-    return GetPointer<const flatbuffers::Vector<uint8_t> *>(VT_CHARACTERS_TYPE);
+  const flatbuffers::Vector<uint8_t > *characters_type() const {
+    return GetPointer<const flatbuffers::Vector<uint8_t > *>(VT_CHARACTERS_TYPE);
   }
-  flatbuffers::Vector<uint8_t> *mutable_characters_type() {
-    return GetPointer<flatbuffers::Vector<uint8_t> *>(VT_CHARACTERS_TYPE);
+  flatbuffers::Vector<uint8_t > *mutable_characters_type() {
+    return GetPointer<flatbuffers::Vector<uint8_t > *>(VT_CHARACTERS_TYPE);
   }
-  const flatbuffers::Vector<flatbuffers::Offset<void>> *characters() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<void>> *>(VT_CHARACTERS);
+  const flatbuffers::Vector<flatbuffers::Offset<void> > *characters() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<void> > *>(VT_CHARACTERS);
   }
-  flatbuffers::Vector<flatbuffers::Offset<void>> *mutable_characters() {
-    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<void>> *>(VT_CHARACTERS);
+  flatbuffers::Vector<flatbuffers::Offset<void> > *mutable_characters() {
+    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<void> > *>(VT_CHARACTERS);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -270,9 +270,9 @@ struct Movie FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyCharacterVector(verifier, characters(), characters_type()) &&
            verifier.EndTable();
   }
-  MovieT *UnPack(const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  void UnPackTo(MovieT *_o, const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  static flatbuffers::Offset<Movie> Pack(flatbuffers::FlatBufferBuilder &_fbb, const MovieT* _o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
+  MovieT *UnPack(const flatbuffers::resolver_function_t *_resolver = NULLPTR) const;
+  void UnPackTo(MovieT *_o, const flatbuffers::resolver_function_t *_resolver = NULLPTR) const;
+  static flatbuffers::Offset<Movie> Pack(flatbuffers::FlatBufferBuilder &_fbb, const MovieT* _o, const flatbuffers::rehasher_function_t *_rehasher = NULLPTR);
 };
 
 struct MovieBuilder {
@@ -284,10 +284,10 @@ struct MovieBuilder {
   void add_main_character(flatbuffers::Offset<void> main_character) {
     fbb_.AddOffset(Movie::VT_MAIN_CHARACTER, main_character);
   }
-  void add_characters_type(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> characters_type) {
+  void add_characters_type(flatbuffers::Offset<flatbuffers::Vector<uint8_t >> characters_type) {
     fbb_.AddOffset(Movie::VT_CHARACTERS_TYPE, characters_type);
   }
-  void add_characters(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<void>>> characters) {
+  void add_characters(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<void> >> characters) {
     fbb_.AddOffset(Movie::VT_CHARACTERS, characters);
   }
   MovieBuilder(flatbuffers::FlatBufferBuilder &_fbb)
@@ -306,8 +306,8 @@ inline flatbuffers::Offset<Movie> CreateMovie(
     flatbuffers::FlatBufferBuilder &_fbb,
     Character main_character_type = Character_NONE,
     flatbuffers::Offset<void> main_character = 0,
-    flatbuffers::Offset<flatbuffers::Vector<uint8_t>> characters_type = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<void>>> characters = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<uint8_t >> characters_type = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<void> >> characters = 0) {
   MovieBuilder builder_(_fbb);
   builder_.add_characters(characters);
   builder_.add_characters_type(characters_type);
@@ -320,8 +320,8 @@ inline flatbuffers::Offset<Movie> CreateMovieDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     Character main_character_type = Character_NONE,
     flatbuffers::Offset<void> main_character = 0,
-    const std::vector<uint8_t> *characters_type = nullptr,
-    const std::vector<flatbuffers::Offset<void>> *characters = nullptr) {
+    const std::vector<uint8_t> *characters_type = NULLPTR,
+    const std::vector<flatbuffers::Offset<void>> *characters = NULLPTR) {
   return CreateMovie(
       _fbb,
       main_character_type,
@@ -330,7 +330,7 @@ inline flatbuffers::Offset<Movie> CreateMovieDirect(
       characters ? _fbb.CreateVector<flatbuffers::Offset<void>>(*characters) : 0);
 }
 
-flatbuffers::Offset<Movie> CreateMovie(flatbuffers::FlatBufferBuilder &_fbb, const MovieT *_o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
+flatbuffers::Offset<Movie> CreateMovie(flatbuffers::FlatBufferBuilder &_fbb, const MovieT *_o, const flatbuffers::rehasher_function_t *_rehasher = NULLPTR);
 
 inline AttackerT *Attacker::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
   AttackerT* _o = new AttackerT();
@@ -368,8 +368,8 @@ inline void Movie::UnPackTo(MovieT *_o, const flatbuffers::resolver_function_t *
   (void)_resolver;
   { Character _e = main_character_type(); _o->main_character.type = _e; };
   { const void * _e = main_character(); if (_e) _o->main_character.value = CharacterUnion::UnPack(_e, main_character_type(), _resolver); };
-  { const flatbuffers::Vector<uint8_t> * _e = characters_type(); if (_e) { _o->characters.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->characters[_i].type = (Character)_e->Get(_i); } } };
-  { const flatbuffers::Vector<flatbuffers::Offset<void>> * _e = characters(); if (_e) { _o->characters.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->characters[_i].value = CharacterUnion::UnPack(_e->Get(_i), characters_type()->GetEnum<Character>(_i), _resolver); } } };
+  { const flatbuffers::Vector<uint8_t > * _e = characters_type(); if (_e) { _o->characters.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->characters[_i].type = (Character)_e->Get(_i); } } };
+  { const flatbuffers::Vector<flatbuffers::Offset<void> > * _e = characters(); if (_e) { _o->characters.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->characters[_i].value = CharacterUnion::UnPack(_e->Get(_i), characters_type()->GetEnum<Character>(_i), _resolver); } } };
 }
 
 inline flatbuffers::Offset<Movie> Movie::Pack(flatbuffers::FlatBufferBuilder &_fbb, const MovieT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
@@ -383,7 +383,7 @@ inline flatbuffers::Offset<Movie> CreateMovie(flatbuffers::FlatBufferBuilder &_f
     const std::vector<CharacterUnion>& _v;
     ItemCreator_characters_type(const std::vector<CharacterUnion>& v) :
       _v(v) {};
-    virtual uint8_t operator()(size_t i) {
+    virtual uint8_t operator()(size_t i) const {
       return static_cast<uint8_t>(_v[i].type);
     }
   };
@@ -396,15 +396,15 @@ inline flatbuffers::Offset<Movie> CreateMovie(flatbuffers::FlatBufferBuilder &_f
       _fbb(f),
       _rehasher(r),
       _v(v) {};
-    virtual flatbuffers::Offset<void> operator()(size_t i) {
+    virtual flatbuffers::Offset<void> operator()(size_t i) const {
       return _v[i].Pack(_fbb, _rehasher);
     }
   };
   ItemCreator_characters c_ItemCreator_characters(_fbb, _rehasher, _o->characters);
   Character _main_character_type = _o->main_character.type;
   flatbuffers::Offset<void> _main_character = _o->main_character.Pack(_fbb);
-  flatbuffers::Offset<flatbuffers::Vector<uint8_t>> _characters_type = _o->characters.size() ? _fbb.CreateVector<uint8_t>(_o->characters.size(), c_ItemCreator_characters_type) : 0;
-  flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<void>>> _characters = _o->characters.size() ? _fbb.CreateVector<flatbuffers::Offset<void> >(_o->characters.size(), c_ItemCreator_characters) : 0;
+  flatbuffers::Offset<flatbuffers::Vector<uint8_t >> _characters_type = _o->characters.size() ? _fbb.CreateVector<uint8_t>(_o->characters.size(), c_ItemCreator_characters_type) : 0;
+  flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<void> >> _characters = _o->characters.size() ? _fbb.CreateVector<flatbuffers::Offset<void> >(_o->characters.size(), c_ItemCreator_characters) : 0;
   return CreateMovie(
       _fbb,
       _main_character_type,
@@ -480,7 +480,7 @@ inline void *CharacterUnion::UnPack(const void *obj, Character type, const flatb
       const flatbuffers::String* ptr = reinterpret_cast<const flatbuffers::String *>(obj);
       return new std::string(ptr->c_str(), ptr->size());
     }
-    default: return nullptr;
+    default: return NULLPTR;
   }
 }
 
@@ -514,7 +514,7 @@ inline flatbuffers::Offset<void> CharacterUnion::Pack(flatbuffers::FlatBufferBui
   }
 }
 
-inline CharacterUnion::CharacterUnion(const CharacterUnion &u) FLATBUFFERS_NOEXCEPT : type(u.type), value(nullptr) {
+inline CharacterUnion::CharacterUnion(const CharacterUnion &u) FLATBUFFERS_NOEXCEPT : type(u.type), value(NULLPTR) {
   switch (type) {
     case Character_MuLan: {
       value = new AttackerT(*reinterpret_cast<AttackerT *>(u.value));
@@ -579,7 +579,7 @@ inline void CharacterUnion::Reset() {
     }
     default: break;
   }
-  value = nullptr;
+  value = NULLPTR;
   type = Character_NONE;
 }
 
@@ -611,10 +611,10 @@ inline void FinishMovieBuffer(
   fbb.Finish(root, MovieIdentifier());
 }
 
-inline std::unique_ptr<MovieT> UnPackMovie(
+inline std::auto_ptr<MovieT> UnPackMovie(
     const void *buf,
-    const flatbuffers::resolver_function_t *res = nullptr) {
-  return std::unique_ptr<MovieT>(GetMovie(buf)->UnPack(res));
+    const flatbuffers::resolver_function_t *res = NULLPTR) {
+  return std::auto_ptr<MovieT>(GetMovie(buf)->UnPack(res));
 }
 
 #endif  // FLATBUFFERS_GENERATED_UNIONVECTOR_H_

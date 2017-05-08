@@ -20,7 +20,7 @@
 #include <assert.h>
 
 #ifndef ARDUINO
-#include <cstdint>
+#include <stdint.h>
 #endif
 #include <cstddef>
 #include <cstdlib>
@@ -71,7 +71,8 @@
       template<class T> inline operator T*() const { return 0; }
     private:
       void operator&() const;
-    } nullptr = {};
+    } NULLPTR = {};
+    #define nullptr NULLPTR
   #endif
   #ifndef constexpr
     #define constexpr const
@@ -697,7 +698,7 @@ template <typename T> T* data(std::vector<T> &v) {
 // as FlatBufferBuilder::CreateVector parameter
 template<typename T>
 struct VectorItemCreator {
-  virtual T operator()(size_t i) = 0;
+  virtual T operator()(size_t i) const = 0;
 };
 
 /// @endcond

@@ -26,7 +26,7 @@ inline const char **EnumNamesEnumInNestedNS() {
     "A",
     "B",
     "C",
-    nullptr
+    NULLPTR
   };
   return names;
 }
