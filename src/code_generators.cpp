@@ -123,7 +123,7 @@ std::string BaseGenerator::LastNamespacePart(const Namespace &ns) {
 // outside of its namespace.
 std::string BaseGenerator::WrapInNameSpace(const Namespace *ns,
                                            const std::string &name) const {
-  if (CurrentNameSpace() == ns) return name;
+  if ((CurrentNameSpace() == ns) || (ns == nullptr)) return name;
   std::string qualified_name = qualifying_start_;
   for (auto it = ns->components.begin(); it != ns->components.end(); ++it)
     qualified_name += *it + qualifying_separator_;

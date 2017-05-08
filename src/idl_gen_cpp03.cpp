@@ -1047,15 +1047,19 @@ class Cpp03Generator : public BaseGenerator {
     return code;
   }
 
+  std::string GenMemberType(const FieldDef &field) {
+      auto type = GenTypeNative(field.value.type, false, field);
+      auto cpp_type = field.attributes.Lookup("cpp_type");
+      return (cpp_type ? cpp_type->constant + " *" : type + " ");
+  }
+
   // Generate a member, including a default value for scalars and raw pointers.
   void GenMember(const FieldDef &field) {
     if (!field.deprecated &&  // Deprecated fields won't be accessible.
         field.value.type.base_type != BASE_TYPE_UTYPE &&
         (field.value.type.base_type != BASE_TYPE_VECTOR ||
          field.value.type.element != BASE_TYPE_UTYPE)) {
-      auto type = GenTypeNative(field.value.type, false, field);
-      auto cpp_type = field.attributes.Lookup("cpp_type");
-      auto full_type = (cpp_type ? cpp_type->constant + " *" : type + " ");
+      auto full_type = GenMemberType(field);
       code_.SetValue("FIELD_TYPE", full_type);
       code_.SetValue("FIELD_NAME", field.name);
       code_ += "  {{FIELD_TYPE}}{{FIELD_NAME}};";
@@ -1750,20 +1754,21 @@ class Cpp03Generator : public BaseGenerator {
     switch (field.value.type.base_type) {
       case BASE_TYPE_VECTOR: {
         auto vector_type = field.value.type.VectorType();
-        auto element_type = GenTypeBasic(vector_type, true);
-        std::string vector = "std::vector<" + element_type + ">";
+        auto element_type = GenTypeBasic(vector_type, false);
         switch (vector_type.base_type) {
           case BASE_TYPE_STRUCT: {
             if (!IsStruct(vector_type)) {
+              element_type = "flatbuffers::Offset<" + WrapInNameSpace(*vector_type.struct_def) + ">";
+              std::string vector = GenMemberType(field);
               code_ += "  struct " + GenItemCreatorName(field) + " : flatbuffers::VectorItemCreator<\\";
               code_ += element_type + " > {";
               code_ += "    flatbuffers::FlatBufferBuilder &_fbb;";
               code_ += "    const flatbuffers::rehasher_function_t *_rehasher;";
-              code_ += "    " + vector + "& _v;";
+              code_ += "    const " + vector + "& _v;";
               code_ += "    " + GenItemCreatorName(field) + "\\";
               code_ += "(flatbuffers::FlatBufferBuilder &f, \\";
               code_ += "const flatbuffers::rehasher_function_t *r, \\";
-              code_ += vector + "& v) :";
+              code_ += "const " + vector + "& v) :";
               code_ += "      _fbb(f),";
               code_ += "      _rehasher(r),";
               code_ += "      _v(v) {};";
@@ -1778,15 +1783,17 @@ class Cpp03Generator : public BaseGenerator {
             break;
           }
           case BASE_TYPE_UNION: {
+            element_type = "flatbuffers::Offset<void>";
+            std::string vector = GenMemberType(field);
             code_ += "  struct " + GenItemCreatorName(field) + " : flatbuffers::VectorItemCreator<\\";
-            code_ += element_type + " > {";
+            code_ += element_type + "> {";
             code_ += "    flatbuffers::FlatBufferBuilder &_fbb;";
             code_ += "    const flatbuffers::rehasher_function_t *_rehasher;";
-            code_ += "    " + vector + "& _v;";
+            code_ += "    const " + vector + "& _v;";
             code_ += "    " + GenItemCreatorName(field) + "\\";
             code_ += "(flatbuffers::FlatBufferBuilder &f, \\";
             code_ += "const flatbuffers::rehasher_function_t *r, \\";
-            code_ += vector + "& v) :";
+            code_ += "const " + vector + "& v) :";
             code_ += "      _fbb(f),";
             code_ += "      _rehasher(r),";
             code_ += "      _v(v) {};";
@@ -1798,17 +1805,18 @@ class Cpp03Generator : public BaseGenerator {
             break;
           }
           case BASE_TYPE_UTYPE: {
+            std::string vector = "std::vector<" + field.value.type.enum_def->name + "Union>";
             code_ += "  struct " + GenItemCreatorName(field) + " : flatbuffers::VectorItemCreator<\\";
-            code_ += element_type + " > {";
-            code_ += "    " + vector + "& _v;";
+            code_ += element_type + "> {";
+            code_ += "    const " + vector + "& _v;";
             code_ += "    " + GenItemCreatorName(field) + "\\";
-            code_ += "  (" + vector + "& v) :";
+            code_ += "(const " + vector + "& v) :";
             code_ += "      _v(v) {};";
             code_ += "    virtual " + element_type + " operator()(size_t i) {";
             code_ += "      return static_cast<uint8_t>(_v[i].type);";
             code_ += "    }";
             code_ += "  };";
-            code_ += "  " + GenItemCreatorName(field) + " c_" + GenItemCreatorName(field) + "(_fbb, _rehasher, _o->" + field.name + ");";
+            code_ += "  " + GenItemCreatorName(field) + " c_" + GenItemCreatorName(field) + "(_o->" + StripUnionType(field.name) + ");";
             break;
           } 
           default: {
@@ -1878,10 +1886,9 @@ class Cpp03Generator : public BaseGenerator {
               }
               code += "(" + value + ")";
             } else {
-              code += 
               code += "_fbb.CreateVector<flatbuffers::Offset<";
               code += WrapInNameSpace(*vector_type.struct_def) + "> >";
-              code += "(" + value + ".size(), c_" + GenItemCreatorName(field) + ");";
+              code += "(" + value + ".size(), c_" + GenItemCreatorName(field) + ")";
             }
             break;
           }
@@ -1891,13 +1898,13 @@ class Cpp03Generator : public BaseGenerator {
           }
           case BASE_TYPE_UNION: {
             code += "_fbb.CreateVector<flatbuffers::Offset<void> >";
-            code += "(" + value + ".size(), c_" + GenItemCreatorName(field) + ");";
+            code += "(" + value + ".size(), c_" + GenItemCreatorName(field) + ")";
             break;
           }
           case BASE_TYPE_UTYPE: {
             value = StripUnionType(value);
             code += "_fbb.CreateVector<uint8_t>(" + value;
-            code += ".size(), c_" + GenItemCreatorName(field) + ");";
+            code += ".size(), c_" + GenItemCreatorName(field) + ")";
             break;
           }
           default: {

@@ -1204,15 +1204,15 @@ inline flatbuffers::Offset<Monster> Monster::Pack(flatbuffers::FlatBufferBuilder
 inline flatbuffers::Offset<Monster> CreateMonster(flatbuffers::FlatBufferBuilder &_fbb, const MonsterT *_o, const flatbuffers::rehasher_function_t *_rehasher) {
   (void)_rehasher;
   (void)_o;
-  struct ItemCreator_testarrayoftables : flatbuffers::VectorItemCreator<Offset<void> > {
+  struct ItemCreator_testarrayoftables : flatbuffers::VectorItemCreator<flatbuffers::Offset<Monster> > {
     flatbuffers::FlatBufferBuilder &_fbb;
     const flatbuffers::rehasher_function_t *_rehasher;
-    std::vector<Offset<void>>& _v;
-    ItemCreator_testarrayoftables(flatbuffers::FlatBufferBuilder &f, const flatbuffers::rehasher_function_t *r, std::vector<Offset<void>>& v) :
+    const std::vector<std::unique_ptr<MonsterT>> & _v;
+    ItemCreator_testarrayoftables(flatbuffers::FlatBufferBuilder &f, const flatbuffers::rehasher_function_t *r, const std::vector<std::unique_ptr<MonsterT>> & v) :
       _fbb(f),
       _rehasher(r),
       _v(v) {};
-    virtual Offset<void> operator()(size_t i) {
+    virtual flatbuffers::Offset<Monster> operator()(size_t i) {
       return CreateMonster(_fbb, _v[i].get(), _rehasher);
     }
   };
@@ -1227,7 +1227,7 @@ inline flatbuffers::Offset<Monster> CreateMonster(flatbuffers::FlatBufferBuilder
   flatbuffers::Offset<void> _test = _o->test.Pack(_fbb);
   flatbuffers::Offset<flatbuffers::Vector<const Test *>> _test4 = _o->test4.size() ? _fbb.CreateVectorOfStructs(_o->test4) : 0;
   flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> _testarrayofstring = _o->testarrayofstring.size() ? _fbb.CreateVectorOfStrings(_o->testarrayofstring) : 0;
-  flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Monster>>> _testarrayoftables = _o->testarrayoftables.size() ? _fbb.CreateVector<flatbuffers::Offset<_fbb.CreateVector<flatbuffers::Offset<Monster> >(_o->testarrayoftables.size(), c_ItemCreator_testarrayoftables); : 0;
+  flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Monster>>> _testarrayoftables = _o->testarrayoftables.size() ? _fbb.CreateVector<flatbuffers::Offset<Monster> >(_o->testarrayoftables.size(), c_ItemCreator_testarrayoftables) : 0;
   flatbuffers::Offset<Monster> _enemy = _o->enemy ? CreateMonster(_fbb, _o->enemy.get(), _rehasher) : 0;
   flatbuffers::Offset<flatbuffers::Vector<uint8_t>> _testnestedflatbuffer = _o->testnestedflatbuffer.size() ? _fbb.CreateVector(_o->testnestedflatbuffer) : 0;
   flatbuffers::Offset<Stat> _testempty = _o->testempty ? CreateStat(_fbb, _o->testempty.get(), _rehasher) : 0;

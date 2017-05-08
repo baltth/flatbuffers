@@ -462,26 +462,26 @@ inline flatbuffers::Offset<Monster> Monster::Pack(flatbuffers::FlatBufferBuilder
 inline flatbuffers::Offset<Monster> CreateMonster(flatbuffers::FlatBufferBuilder &_fbb, const MonsterT *_o, const flatbuffers::rehasher_function_t *_rehasher) {
   (void)_rehasher;
   (void)_o;
-  struct ItemCreator_weapons : flatbuffers::VectorItemCreator {
+  struct ItemCreator_weapons : flatbuffers::VectorItemCreator<flatbuffers::Offset<Weapon> > {
     flatbuffers::FlatBufferBuilder &_fbb;
     const flatbuffers::rehasher_function_t *_rehasher;
-    std::vector<Offset<void>>& _v;
-    ItemCreator_weapons(flatbuffers::FlatBufferBuilder &f, const flatbuffers::rehasher_function_t *r, std::vector<Offset<void>>& v) :
+    const std::vector<std::unique_ptr<WeaponT>> & _v;
+    ItemCreator_weapons(flatbuffers::FlatBufferBuilder &f, const flatbuffers::rehasher_function_t *r, const std::vector<std::unique_ptr<WeaponT>> & v) :
       _fbb(f),
       _rehasher(r),
       _v(v) {};
-    virtual Offset<void> operator()(size_t i) {
+    virtual flatbuffers::Offset<Weapon> operator()(size_t i) {
       return CreateWeapon(_fbb, _v[i].get(), _rehasher);
     }
   };
-  c_ItemCreator_weapons(_fbb, _rehasher, _o->weapons);
+  ItemCreator_weapons c_ItemCreator_weapons(_fbb, _rehasher, _o->weapons);
   const Vec3 *_pos = _o->pos ? _o->pos.get() : 0;
   int16_t _mana = _o->mana;
   int16_t _hp = _o->hp;
   flatbuffers::Offset<flatbuffers::String> _name = _o->name.size() ? _fbb.CreateString(_o->name) : 0;
   flatbuffers::Offset<flatbuffers::Vector<uint8_t>> _inventory = _o->inventory.size() ? _fbb.CreateVector(_o->inventory) : 0;
   Color _color = _o->color;
-  flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Weapon>>> _weapons = _o->weapons.size() ? _fbb.CreateVector<flatbuffers::Offset<_fbb.CreateVector<flatbuffers::Offset<Weapon> >(_o->weapons.size(), c_ItemCreator_weapons); : 0;
+  flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Weapon>>> _weapons = _o->weapons.size() ? _fbb.CreateVector<flatbuffers::Offset<Weapon> >(_o->weapons.size(), c_ItemCreator_weapons) : 0;
   Equipment _equipped_type = _o->equipped.type;
   flatbuffers::Offset<void> _equipped = _o->equipped.Pack(_fbb);
   return MyGame::Sample::CreateMonster(
